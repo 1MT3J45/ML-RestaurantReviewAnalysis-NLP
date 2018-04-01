@@ -6,28 +6,21 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 
-testA = pd.read_csv("CSV/Restaurants_Test_Data_PhaseA.csv")
 testB = pd.read_csv("CSV/Restaurants_Test_Data_phaseB.csv")
-trainA = pd.read_csv("CSV/Restaurants_Train.csv")
 trainB = pd.read_csv("CSV/Restaurants_Train_v2.csv")
 
-print(testA.head(5))
 print(testB.head(5))
-print(trainA.head(5))
 print(trainB.head(5))
 
-testA_1 = testA
-trainB_1 = trainB.iloc[:, [0, 7]]
-trainA_1 = trainA.iloc[:, [0, 7]]
-testB_1 = testB.iloc[:, [0, 5]]
+trainB_1 = trainB.iloc[:, [0, 7, 5]]
+testB_1 = testB.iloc[:, [0, 5, 4]]
 
 fullB = pd.concat([testB_1, trainB_1], axis=0, ignore_index=True)
-fullA = pd.concat([testA_1, trainA_1], axis=0, ignore_index=True)
 
 nltk.download('stopwords')
 import re
 # -------------------------------------------- DATASET = fullA
-dataset = fullA
+dataset = fullB
 # Creating a Corpus
 corpus = []
 for i in range(0, dataset.__len__()):
@@ -35,8 +28,8 @@ for i in range(0, dataset.__len__()):
     review = review.lower()
     review = review.split()
 
-    ps = PorterStemmer()
-    nl = WordNetLemmatizer()
+    ps = PorterStemmer()     # TODO FIND POINT OF DIFFERENCE wrt LEMMATIZATION
+    nl = WordNetLemmatizer() # TODO Apply Lemmatization after POS Tagging
 
     review = [ps.stem(nl.lemmatize(word, pos='v')) for word in review if not word in set(stopwords.words('english'))]
     review = ' '.join(review)
@@ -90,3 +83,17 @@ try:
     os.system("libreoffice --calc RestoReview.csv")
 except:
     print("This feature works with Ubuntu OS with LibreOffice only!")
+
+from nltk import bigrams
+
+# for w1, tag1, w2 , tag2 in nltk.bigrams(PoS_tags):
+#     if tag1.startswith('JJ'or 'RB')
+
+# DATAFRAME OP - Feature Extraction
+# text/review , lemmas , bitagged feature , dep. feature
+
+# DATAFRAME OP - Unique Feature Extraction
+# text/review , lemmas , bitagged feature , dep. feature (Unique from lemmas & bitagged feature)
+
+# ASPECT CAT DATAFRAME OP - Aspect category grouping
+# Aspect cat (y), Wordnet (SYNONYMS) , Conceptnet (CONCEPTS) , COMBINED FEATURE SET (X)
