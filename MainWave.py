@@ -70,3 +70,19 @@ for i in range(dataset.__len__()):
 # ----------------------------------------------------------- STREAM 3 - DEPENDENCY FEATURES
 # TODO Associate All JARs with Python Code
 
+# from nltk.parse.stanford import StanfordParser
+# st_parser = StanfordParser()
+# st_parser.raw_parse(sentence=dataset.iloc[0,0])
+
+import spacy
+nlp_en = spacy.load('en_core_web_sm')
+new = 0
+for sentence in dataset.iloc[0:,0]:
+    print(sentence)
+    for token in nlp_en(sentence):
+        print(token, " >", token.dep_)
+    new = nlp_en(sentence)
+
+from multiprocessing.dummy import Pool as ThreadPool
+pool = ThreadPool(4)
+pool.map(os.system('firefox localhost:5000 &'),spacy.displacy.serve(new, style='dep')).join()
