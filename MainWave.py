@@ -22,7 +22,27 @@ import re
 
 dataset = fullB     # MAJOR DATASET
 corpus = []         # CORPUS (will collect required data)
+# --------------------- FUNCTIONS --------------------------
+
+
+def check_dep_parse(token_dep):
+    dep_str = token_dep
+    check_list = list()
+    if dep_str.startswith('nsub'):
+        pass
+    elif dep_str.startswith('amod'):
+        pass
+    elif dep_str.startswith('rcmod'):
+        pass
+    elif dep_str.startswith('dobj'):
+        pass
+    elif dep_str.startswith('neg'):
+        pass
+    else:
+        return False
+    return True
 # --------------------- STREAMS ----------------------------
+
 
 # ---------------------------------------------------------- STREAM 1 - LEMMATIZATION
 for i in range(0, dataset.__len__()):
@@ -77,12 +97,26 @@ for i in range(dataset.__len__()):
 import spacy
 nlp_en = spacy.load('en_core_web_sm')
 new = 0
-for sentence in dataset.iloc[0:,0]:
-    print(sentence)
-    for token in nlp_en(sentence):
-        print(token, " >", token.dep_)
-    new = nlp_en(sentence)
+dep_feat = []
+try:
+    for increment in range(dataset.__len__()):
+        sentence = dataset.iloc[increment,0]
+        print(sentence)
+        for token in nlp_en(sentence):
+            print(token, "\t-\t", token.dep_)
+            dep = check_dep_parse(token.dep_)
+            print(dep)
+        new = nlp_en(sentence)
+except TypeError as e:
+    print("Unexpected Termination:",e)
+    exit(0)
+except KeyboardInterrupt:
+    print("Human Interrupt Received! Exiting...")
+    exit(0)
 
 from multiprocessing.dummy import Pool as ThreadPool
-pool = ThreadPool(4)
-pool.map(os.system('firefox localhost:5000 &'),spacy.displacy.serve(new, style='dep')).join()
+try:
+    pool = ThreadPool(2)
+    pool.map(os.system('firefox localhost:5000 &'),spacy.displacy.serve(new, style='dep')).join()
+except:
+    print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
