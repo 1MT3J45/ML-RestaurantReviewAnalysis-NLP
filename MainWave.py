@@ -85,8 +85,7 @@ for i in range(dataset.__len__()):
             s2_corpus.append((w1 + ' ' + w2))
         elif tag1.startswith('RB') and tag2.startswith('VB'):   # R9
             s2_corpus.append((w1 + ' ' + w2))
-
-    print(s2_corpus)
+print(s2_corpus)
 # ----------------------------------------------------------- STREAM 3 - DEPENDENCY FEATURES
 # TODO Associate All JARs with Python Code
 
@@ -103,9 +102,12 @@ try:
         sentence = dataset.iloc[increment,0]
         print(sentence)
         for token in nlp_en(sentence):
-            print(token, "\t-\t", token.dep_)
             dep = check_dep_parse(token.dep_)
-            print(dep)
+            if dep is True:
+                print(token.dep_, end="> "); print(token.head, token)
+            else:
+                pass
+        #    print(dep) # , " >" ,token.children_)
         new = nlp_en(sentence)
 except TypeError as e:
     print("Unexpected Termination:",e)
@@ -120,3 +122,6 @@ try:
     pool.map(os.system('firefox localhost:5000 &'),spacy.displacy.serve(new, style='dep')).join()
 except:
     print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
+
+from spacy.lang.en import English
+Parser = English()
