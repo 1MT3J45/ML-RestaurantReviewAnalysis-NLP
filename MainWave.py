@@ -119,7 +119,7 @@ try:
             if dep is True:
                 # print(token.dep_, end="> ")
                 # print(token.head, token)
-                corpora += str(token.head)+' '+str(token)+';'
+                corpora += str(token)+' '+str(token.head)+';'
             else:
                 pass
         S3_dep_corpus.append(corpora)
