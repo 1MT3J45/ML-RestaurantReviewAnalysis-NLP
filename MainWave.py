@@ -174,7 +174,7 @@ Feature_df = pd.concat([Feature_df,pd.Series(u_feat),whole_df.iloc[0:,-1]], axis
 Feature_df = Feature_df.rename(columns={0: 'ufeat'})
 Feature_df.to_csv('Feature.csv', index=False)
 
-# TODO --- Aspect Cat, Lemmas + U_feat (from All sentences)
+# Aspect Cat, Lemmas + U_feat (from All sentences)
 try:
     c_list = xq.combiner(Feature_df=Feature_df, lemma_col=1, uniqueFeat_col=2)
 except KeyboardInterrupt:
