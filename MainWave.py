@@ -6,10 +6,12 @@ from multiprocessing.dummy import Pool as ThreadPool
 import os
 import pandas as pd
 import nltk
+import numpy as np
 
 import re
 import spacy
 import progressbar as bar
+import extractUnique as xq
 
 testB = pd.read_csv("CSV/Restaurants_Test_Data_phaseB.csv")
 trainB = pd.read_csv("CSV/Restaurants_Train_v2.csv")
@@ -20,9 +22,9 @@ trainB = pd.read_csv("CSV/Restaurants_Train_v2.csv")
 trainB_1 = trainB.iloc[:, [0, 7, 5]]
 testB_1 = testB.iloc[:, [0, 5, 4]]
 
-fullB = pd.concat([testB_1, trainB_1], axis=0, ignore_index=True)
+fullB = pd.concat([trainB_1], axis=0, ignore_index=True)
 
-nltk.download('stopwords')
+#nltk.download('stopwords')
 
 
 dataset = fullB     # MAJOR DATA-SET
@@ -143,11 +145,65 @@ df = pd.concat([stream1, stream2, stream3], axis=1)
 df = df.rename(columns={0: 'lemmas', 1: 'bigrams', 2: 'depenrel'})
 df.to_csv('FeatureSet.csv', index=False)
 df =pd.read_csv('FeatureSet.csv', sep=',')
+# try:
+#     pool = ThreadPool(2)
+#     pool.map(os.system('firefox localhost:5000 &'), spacy.displacy.serve(plot_nlp, style='dep')).join()
+#     exit(0)
+# except OSError:
+#     print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
+# except TypeError:
+#     print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
+
+# Get Unique Features from Bigrams, Depen Rel
+whole_df = pd.concat([dataset.iloc[0:,0],stream1, stream2, stream3, dataset.iloc[0:,2]], axis=1)
+whole_df = whole_df.rename(columns={'text': 'reviews', 0: 'lemmas', 1: 'bigrams', 2: 'depenrel', 'aspectCategories/aspectCategory/0/_category': 'aspectCategory'})
+whole_df.to_csv('WholeSet.csv', index=False)
+whole_df = pd.read_csv('WholeSet.csv', sep=',')
 try:
-    pool = ThreadPool(2)
-    pool.map(os.system('firefox localhost:5000 &'), spacy.displacy.serve(plot_nlp, style='dep')).join()
+    u_feat = xq.unique(whole_df=whole_df,bigram_col=2,dep_rel_col=3)
+    print("Unique Features Extracted")
+except KeyboardInterrupt:
+    print("Manual Interrupt to Unique Features")
     exit(0)
-except OSError:
-    print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
-except TypeError:
-    print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
+except Exception as e:
+    print('Improper Termination due to:',e)
+    exit(0)
+# DF with Review, Lemmas, U_feat, Aspect Cat
+Feature_df = whole_df[['reviews','lemmas']][0:]
+Feature_df = pd.concat([Feature_df,pd.Series(u_feat),whole_df.iloc[0:,-1]], axis=1)
+Feature_df = Feature_df.rename(columns={0: 'ufeat'})
+Feature_df.to_csv('Feature.csv', index=False)
+
+# Aspect Cat, Lemmas + U_feat (from All sentences)
+try:
+    c_list = xq.combiner(Feature_df=Feature_df, lemma_col=1, uniqueFeat_col=2)
+except KeyboardInterrupt:
+    print("Manual Interrupt to Combiner")
+    exit(0)
+except Exception as e:
+    print('Improper Termination due to:',e)
+    exit(0)
+n = np.array(c_list)
+n = pd.Series(n)
+Process_df = pd.concat([Feature_df['reviews'][0:], n, Feature_df['aspectCategory'][0:]], axis=1).\
+    rename(columns={0: 'combinedFeatures'})
+Process_df = Process_df.rename(columns={0: 'combinedFeatures'})
+Process_df.to_csv('Process.csv', index=False)
+# TODO --- DF > Aspect Cat, Lemmas + U_feat = X , Synon.ConceptNet(X), Synon.SentiWordNet(X)
+from nltk.corpus import wordnet
+
+syns = wordnet.synsets('program')
+
+from nltk.corpus import wordnet
+from autocorrect import spell
+synonyms = []
+antonyms = []
+correct_word = spell('thanos')
+for syn in wordnet.synsets(correct_word):
+    for l in syn.lemmas():
+        synonyms.append(l.name())
+        if l.antonyms():
+            antonyms.append(l.antonyms()[0].name())
+print(set(synonyms))
+print(set(antonyms))
+# TODO --- ML over DF
