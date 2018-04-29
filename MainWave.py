@@ -190,5 +190,20 @@ Process_df = pd.concat([Feature_df['reviews'][0:], n, Feature_df['aspectCategory
 Process_df = Process_df.rename(columns={0: 'combinedFeatures'})
 Process_df.to_csv('Process.csv', index=False)
 # TODO --- DF > Aspect Cat, Lemmas + U_feat = X , Synon.ConceptNet(X), Synon.SentiWordNet(X)
+from nltk.corpus import wordnet
 
+syns = wordnet.synsets('program')
+
+from nltk.corpus import wordnet
+from autocorrect import spell
+synonyms = []
+antonyms = []
+correct_word = spell('thanos')
+for syn in wordnet.synsets(correct_word):
+    for l in syn.lemmas():
+        synonyms.append(l.name())
+        if l.antonyms():
+            antonyms.append(l.antonyms()[0].name())
+print(set(synonyms))
+print(set(antonyms))
 # TODO --- ML over DF
