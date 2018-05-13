@@ -15,6 +15,7 @@ from autocorrect import spell
 
 import progressbar as bar
 import extractUnique as xq
+import tristream_processor as stream
 import pickle
 
 testB = pd.read_csv("CSV/Restaurants_Test_Data_phaseB.csv")
@@ -140,7 +141,6 @@ try:
     print('Stream 3: Processed')
     plot_nlp = nlp_en(sentence)
 
-    pass
 except TypeError as e:
     print("[STAGE 2] Unexpected Termination:", e)
     exit(0)
@@ -164,12 +164,13 @@ df = pd.read_csv('FeatureSet.csv', sep=',')
 # except TypeError:
 #     print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
 
-# Get Unique Features from Bigrams, Depen Rel
+# Get Unique Features from Bi-grams, Dependency Rel
 whole_df = pd.concat([dataset.iloc[0:, 0], stream1, stream2, stream3, dataset.iloc[0:, 2]], axis=1)
 whole_df = whole_df.rename(columns={'text': 'reviews', 0: 'lemmas', 1: 'bigrams', 2: 'depenrel',
                                     'aspectCategories/aspectCategory/0/_category': 'aspectCategory'})
 whole_df.to_csv('WholeSet.csv', index=False)
 whole_df = pd.read_csv('WholeSet.csv', sep=',')
+u_feat = list()
 try:
     u_feat = xq.unique(whole_df=whole_df, bigram_col=2, dep_rel_col=3)
     print("Unique Features Extracted")
@@ -188,7 +189,7 @@ Feature_df.to_csv('Feature.csv', index=False)
 # Aspect Cat, Lemmas + U_feat (from All sentences)
 c_list = list()
 try:
-    c_list = xq.combiner(Feature_df=Feature_df, lemma_col=1, uniqueFeat_col=2)
+    c_list = xq.combiner(Feature_df=Feature_df, lemma_col=1, uniqueFeat_col=2, use_ast=True)
 except KeyboardInterrupt:
     print("[STAGE 4] Manual Interrupt to Combiner")
     exit(0)
@@ -196,67 +197,73 @@ except Exception as e:
     print("[STAGE 4] Improper Termination due to:", e)
     exit(0)
 ngram_list = list()
+import time
+import os
 try:
-    ngram_list = xq.get_correct_spell(word_list=c_list)
-    pickle.dumps(ngram_list)
+    st = time.time()
+    ngram_list = xq.get_correct_spell(word_list=c_list, split_by=';')
+    et = time.time()
+    if len(ngram_list) > 0:
+        os.system('python2 notifyme.py 9765838775 Sir, Execution is complete!')
+    else:
+        os.system('python2 notifyme.py 9765838775 Sir, you might wanna check the code you wrote')
+    print('Time elapsed %.3f' % float(((et-st)/60)/60))
 except ValueError:
     print("[STAGE 5] Spell Checker | Interrupted")
+except TypeError:
+    print("[STAGE 5] Spell Checker | Multi-threading issue")
 except AttributeError:
     print("[STAGE 5] Spell Checker | Attrition")
 except KeyboardInterrupt:
     print("[STAGE 5] Spell Checker | Forced Drop")
 
-from sklearn.feature_extraction.text import CountVectorizer
 # Creating Bag of Words Model
+from sklearn.feature_extraction.text import CountVectorizer
 
-cv = CountVectorizer(max_features=33433, ngram_range=(1, 2))
-cv.fit_transform(ngram_list)
+cv = CountVectorizer(max_features=12488, ngram_range=(1, 2))
+X = cv.fit_transform(ngram_list).toarray()
 itemDict = cv.vocabulary_
-print(cv.vocabulary_)
 
-key_Book = pd.DataFrame(itemDict, index=range(itemDict.__len__()))
-key_Book.to_csv('key_Book.csv', index=True, sep=',')
+# key_Book = pd.DataFrame(itemDict, index=range(itemDict.__len__()))
+# key_Book.to_csv('key_Book.csv', index=True, sep=',')
+# ============================== Preparing Train set =============================
+# ML with Bag of Words to Aspect Categories
+X_train = cv.fit_transform(ngram_list).toarray()
+y_train = Feature_df['aspectCategory']
 
-# n = np.array(c_list)
-# n = pd.Series(n)
-# Process_df = pd.concat([Feature_df['reviews'][0:], n, Feature_df['aspectCategory'][0:]], axis=1). \
-#     rename(columns={0: 'combinedFeatures'})
-# Process_df = Process_df.rename(columns={0: 'combinedFeatures'})
-# Process_df.to_csv('Process.csv', index=False)
-# # TODO --- Pivot DF >  AspectCat, Combined_feat
-# Pivot_df = Process_df.iloc[0:, [2, 1]]
-# Pivot_df = Pivot_df.groupby('aspectCategory')['combinedFeatures'].apply(list).reset_index()
-# Pivot_df.to_csv('Pivot.csv')
-#
-# # TODO --- DF > Aspect Cat, Lemmas + U_feat = X , Synon.ConceptNet(X), Synon.SentiWordNet(X)
-# from nltk.corpus import sentiwordnet as swn
-# from nltk.corpus.reader.lin import LinThesaurusCorpusReader as ltcr
-#
-# synon = ltcr.synonyms(ngram='so horrible')
-# print(synon)
-#
-# sentisynset = swn.senti_synsets('horrible')
-# print(list(sentisynset))
-# synonyms = []
-# correct_word = spell('horribl')
-# for syn in wordnet.synsets(correct_word):
-#     for l in syn.lemmas():
-#         synonyms.append(l.name())
-#         # if l.antonyms():      # This can be used to find antonyms
-#         #     antonyms.append(l.antonyms()[0].name())
-#         # else:
-#         #     pass
-# if len(synonyms) is 0:
-#     synonyms.append('blank')
-#
-# print(set(synonyms))
-# # --------------------------- GET SYNONYMS --------------------------------
-# for i in range(len(Pivot_df)):
-#     features = Pivot_df.iloc[i, 1]
-#     print('I = ',i)
-#     for j in range(len(features)):
-#         print(features[j].split(';'), '\n J = ', j)
-#         wordlist = features[j].split(';')
-#         syns = xq.synset_ngram(ngram=wordlist)
-#         print(syns)
-# # TODO --- ML over DF
+# ============================== Preparing Test set ===============================
+reviews = list()
+for x in range(len(testB_1)):
+    l = testB_1['text'][x]
+    reviews.append(l.lower())
+
+stream1 = stream.lemmatize(testB_1)     # Lemmas
+stream2 = stream.bigram(testB_1)        # Bi-grams
+stream3 = stream.dep_rel(testB_1)       # Dependency Relations
+testB_1 = testB_1.rename(columns={'aspectCategories/aspectCategory/0/_category': 'aspectCategory'})
+
+correct_reviews = xq.get_correct_spell(stream3, split_by=';')
+test_df = pd.concat((testB_1['text'][0:], stream1, stream2, stream3, testB_1['aspectCategory']), axis=1)
+unique_feat = xq.unique(whole_df=test_df, bigram_col=2, dep_rel_col=3)
+test_df = pd.concat((testB_1['text'][0:], stream1, pd.Series(unique_feat), testB_1['aspectCategory']), axis=1)
+unique_list = xq.combiner(Feature_df=test_df, lemma_col=1, uniqueFeat_col=2, use_ast=False)
+ngram_test = xq.get_correct_spell(word_list=unique_list, split_by=';')
+
+cv2 = CountVectorizer(max_features=12488, ngram_range=(1, 2))
+X_test = cv2.fit_transform(ngram_test).toarray()
+y_test = test_df['aspectCategory']
+
+# ----------------- PREPARING THE MACHINE --------------------------
+
+from sklearn.ensemble import RandomForestClassifier
+rfc = RandomForestClassifier(n_estimators=11)
+rfc.fit(X_train, y_train)
+y_pred = rfc.predict(X_test)
+
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, precision_score
+print(confusion_matrix(y_test, y_pred))
+prf = precision_recall_fscore_support(y_test, y_pred)
+li = ['Precision', 'Recall\t', 'F1 Measure']
+for i in range(len(prf)-1):
+    x = prf[i]*100.0
+    print('%s \t %.2f \t %.2f \t %.2f \t %.2f \t %.2f' % (li[i], x[0], x[1], x[2], x[3], x[4]))

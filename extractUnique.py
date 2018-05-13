@@ -31,15 +31,24 @@ def unique(whole_df, bigram_col, dep_rel_col):
     return u_list
 
 
-def combiner(Feature_df, lemma_col, uniqueFeat_col):
+def combiner(Feature_df, lemma_col, uniqueFeat_col, use_ast):
     '''Combines the Lemma and Unique features into a single
     sentence. Later to be used for Synonym words using SWordNet
-    Dictionary'''
+    Dictionary. The Flag use_ast Parameter will decide whether to use
+    ast's literal evaluation or not. Literal eval helps to extract
+    List from a string data'''
     dataframe = Feature_df
     c_list = list()
+    sentence = ''
     for i in range(len(dataframe)):
-        sentence = ast.literal_eval(dataframe.iloc[i, lemma_col]) + dataframe.iloc[i, uniqueFeat_col]
+        if use_ast is True:
+            sentence = ast.literal_eval(dataframe.iloc[i, lemma_col]) + dataframe.iloc[i, uniqueFeat_col]
+        elif use_ast is False:
+            sentence = dataframe.iloc[i, lemma_col] + dataframe.iloc[i, uniqueFeat_col]
         # fetching list from string
+        if '' in sentence:
+            popit = sentence.index('')
+            sentence.pop(popit)
         sentence = ';'.join(sentence)
         c_list.append(sentence)
         pb.load(i, dataframe, 'Combining Lemma & Ufeat')
@@ -92,16 +101,44 @@ def get_correct_syns(word):
     return synonyms
 
 
-def get_correct_spell(word_list):
+def get_correct_spell(word_list, split_by=' '):
     from autocorrect import spell
     li = word_list
     spell_right = list()
+    spell_sent = list()
     for i in range(len(li)):
-        w_li = word_list[i].split(';')
-        print(w_li)
+        w_li = word_list[i].split(split_by)
+        sent = ''
+        spell_right = list()
+        # print(w_li)
         for word in w_li:
-            cw = spell(word)
+            if word.startswith("n't"):
+                word = 'not' + word[3:]
+                cw = spell(word)
+            elif word.startswith("I've") or word.startswith("i've"):
+                word = 'i have' + word[4:]
+                cw = spell(word)
+            elif word.startswith("It's") or word.startswith("it's"):
+                word = 'it is' + word[4:]
+                cw = spell(word)
+            else:
+                cw = spell(word)
             spell_right.append(cw.lower())
-        print(spell_right)
+        # print(spell_right)
+        sent = ' '.join(spell_right)
+        spell_sent.append(sent)
         pb.load(i, li, 'Correcting Words')
-    return spell_right
+    return spell_sent
+
+
+def bow_creater(array):
+    # Creating Bag of Words Model
+    from sklearn.feature_extraction.text import CountVectorizer
+
+    ngram_list = array
+
+    cv = CountVectorizer(max_features=33433, ngram_range=(1, 2))
+    X = cv.fit_transform(ngram_list).toarray()
+    itemDict = cv.vocabulary_
+    print(cv.vocabulary_)
+    return X
