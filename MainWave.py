@@ -4,19 +4,22 @@ from nltk.stem import WordNetLemmatizer
 from multiprocessing.dummy import Pool as ThreadPool
 
 import os
+import time
 import pandas as pd
 import nltk
 import numpy as np
 
 import re
 import spacy
-from nltk.corpus import wordnet
-from autocorrect import spell
+from sklearn.feature_extraction.text import CountVectorizer
 
 import progressbar as bar
 import extractUnique as xq
 import tristream_processor as stream
-import pickle
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+
 
 testB = pd.read_csv("CSV/Restaurants_Test_Data_phaseB.csv")
 trainB = pd.read_csv("CSV/Restaurants_Train_v2.csv")
@@ -197,16 +200,11 @@ except Exception as e:
     print("[STAGE 4] Improper Termination due to:", e)
     exit(0)
 ngram_list = list()
-import time
-import os
+
 try:
     st = time.time()
     ngram_list = xq.get_correct_spell(word_list=c_list, split_by=';')
     et = time.time()
-    if len(ngram_list) > 0:
-        os.system('python2 notifyme.py 9765838775 Sir, Execution is complete!')
-    else:
-        os.system('python2 notifyme.py 9765838775 Sir, you might wanna check the code you wrote')
     print('Time elapsed %.3f' % float(((et-st)/60)/60))
 except ValueError:
     print("[STAGE 5] Spell Checker | Interrupted")
@@ -218,7 +216,7 @@ except KeyboardInterrupt:
     print("[STAGE 5] Spell Checker | Forced Drop")
 
 # Creating Bag of Words Model
-from sklearn.feature_extraction.text import CountVectorizer
+
 
 cv = CountVectorizer(max_features=12488, ngram_range=(1, 2))
 X = cv.fit_transform(ngram_list).toarray()
@@ -255,13 +253,12 @@ y_test = test_df['aspectCategory']
 
 # ----------------- PREPARING THE MACHINE --------------------------
 
-from sklearn.ensemble import RandomForestClassifier
 rfc = RandomForestClassifier(n_estimators=11)
 rfc.fit(X_train, y_train)
 y_pred = rfc.predict(X_test)
 
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, precision_score
-print(confusion_matrix(y_test, y_pred))
+cm = confusion_matrix(y_test, y_pred)
+print(cm)
 prf = precision_recall_fscore_support(y_test, y_pred)
 li = ['Precision', 'Recall\t', 'F1 Measure']
 for i in range(len(prf)-1):
