@@ -88,7 +88,7 @@ try:
         bar.load(i, base=dataset, text='Stream 1')
     print('Stream 1: Processed')
     # print(S1_corpus)
-    del testB, testB_1
+    del testB, trainB
     # ----------------------------------------------------------- STREAM 2 - BIGRAMS
 
     for i in range(len(dataset)):
