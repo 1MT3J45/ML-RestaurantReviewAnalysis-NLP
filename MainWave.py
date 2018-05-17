@@ -43,7 +43,6 @@ dataset = fullB  # MAJOR DATA-SET
 
 def check_dep_parse(token_dep):
     dep_str = token_dep
-    check_list = list()
     if dep_str.startswith('nsub'):
         pass
     elif dep_str.startswith('amod'):
@@ -88,6 +87,7 @@ try:
         bar.load(i, base=dataset, text='Stream 1')
     print('Stream 1: Processed')
     # print(S1_corpus)
+    del testB, testB_1
     # ----------------------------------------------------------- STREAM 2 - BIGRAMS
 
     for i in range(len(dataset)):
@@ -117,6 +117,7 @@ try:
         S2_super_corpus.append(corpora)
         corpora = ''
         bar.load(i, base=dataset, text='Stream 2')
+    del corpora, PoS_Tag_sent, tag1, tag2, w1, w2, sent
     print('Stream 2: Processed')
 except KeyboardInterrupt:
     print("[STAGE 1] Terminating. Human Intervention Not Allowed")
@@ -143,7 +144,7 @@ try:
         bar.load(increment, base=dataset, text='Stream 3')
     print('Stream 3: Processed')
     plot_nlp = nlp_en(sentence)
-
+    del sentence, corpora, dep, increment, token
 except TypeError as e:
     print("[STAGE 2] Unexpected Termination:", e)
     exit(0)
@@ -154,10 +155,15 @@ except KeyboardInterrupt:
 stream1 = pd.Series(S1_corpus)
 stream2 = pd.Series(S2_super_corpus)
 stream3 = pd.Series(S3_dep_corpus)
+
+del S1_corpus, S2_super_corpus, S3_dep_corpus
+
 df = pd.concat([stream1, stream2, stream3], axis=1)
 df = df.rename(columns={0: 'lemmas', 1: 'bigrams', 2: 'depenrel'})
 df.to_csv('FeatureSet.csv', index=False)
 df = pd.read_csv('FeatureSet.csv', sep=',')
+
+del df
 # try:
 #     pool = ThreadPool(2)
 #     pool.map(os.system('firefox localhost:5000 &'), spacy.displacy.serve(plot_nlp, style='dep')).join()
@@ -188,7 +194,7 @@ Feature_df = whole_df[['reviews', 'lemmas']][0:]
 Feature_df = pd.concat([Feature_df, pd.Series(u_feat), whole_df.iloc[0:, -1]], axis=1)
 Feature_df = Feature_df.rename(columns={0: 'ufeat'})
 Feature_df.to_csv('Feature.csv', index=False)
-
+del whole_df,
 # Aspect Cat, Lemmas + U_feat (from All sentences)
 c_list = list()
 try:
@@ -228,7 +234,7 @@ itemDict = cv.vocabulary_
 # ML with Bag of Words to Aspect Categories
 X_train = cv.fit_transform(ngram_list).toarray()
 y_train = Feature_df['aspectCategory']
-
+del ngram_list
 # ============================== Preparing Test set ===============================
 reviews = list()
 for x in range(len(testB_1)):
@@ -260,7 +266,9 @@ y_pred = rfc.predict(X_test)
 cm = confusion_matrix(y_test, y_pred)
 print(cm)
 prf = precision_recall_fscore_support(y_test, y_pred)
+li2 = list(rfc.classes_)
 li = ['Precision', 'Recall\t', 'F1 Measure']
+print('\t\t %s \t %.8s \t %s \t %s \t %s' % (li2[0], li2[1], li2[2], li2[3], li2[4]))
 for i in range(len(prf)-1):
     x = prf[i]*100.0
-    print('%s \t %.2f \t %.2f \t %.2f \t %.2f \t %.2f' % (li[i], x[0], x[1], x[2], x[3], x[4]))
+    print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f' % (li[i], x[0], x[1], x[2], x[3], x[4]))
