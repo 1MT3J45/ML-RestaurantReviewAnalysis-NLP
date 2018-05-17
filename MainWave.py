@@ -5,6 +5,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 import os
 import time
+_start = time.time()
 import pandas as pd
 import nltk
 import numpy as np
@@ -117,7 +118,7 @@ try:
         S2_super_corpus.append(corpora)
         corpora = ''
         bar.load(i, base=dataset, text='Stream 2')
-    del corpora, PoS_Tag_sent, tag1, tag2, w1, w2, sent
+    del PoS_Tag_sent, tag1, tag2, w1, w2, sent
     print('Stream 2: Processed')
 except KeyboardInterrupt:
     print("[STAGE 1] Terminating. Human Intervention Not Allowed")
@@ -144,14 +145,13 @@ try:
         bar.load(increment, base=dataset, text='Stream 3')
     print('Stream 3: Processed')
     plot_nlp = nlp_en(sentence)
-    del sentence, corpora, dep, increment, token
 except TypeError as e:
     print("[STAGE 2] Unexpected Termination:", e)
     exit(0)
 except KeyboardInterrupt:
     print("[STAGE 2] Human Interrupt Received! Exiting...")
     exit(0)
-
+del sentence, dep, increment, token
 stream1 = pd.Series(S1_corpus)
 stream2 = pd.Series(S2_super_corpus)
 stream3 = pd.Series(S3_dep_corpus)
@@ -272,3 +272,5 @@ print('\t\t %s \t %.8s \t %s \t %s \t %s' % (li2[0], li2[1], li2[2], li2[3], li2
 for i in range(len(prf)-1):
     x = prf[i]*100.0
     print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f' % (li[i], x[0], x[1], x[2], x[3], x[4]))
+_stop = time.time()
+print("Total time of Execution:", _stop - _start)
