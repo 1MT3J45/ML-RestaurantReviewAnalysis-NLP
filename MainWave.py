@@ -182,6 +182,8 @@ def sheet_generator(s1, s2, s3):
     #     print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
 
     # Get Unique Features from Bi-grams, Dependency Rel
+    stream2 = stream2.rename(1)
+    stream3 = stream3.rename(2)
     whole_df = pd.concat([dataset.iloc[0:, 0], stream1, stream2, stream3, dataset.iloc[0:, 2]], axis=1)
     whole_df = whole_df.rename(columns={'text': 'reviews', 0: 'lemmas', 1: 'bigrams', 2: 'depenrel',
                                         'aspectCategories/aspectCategory/0/_category': 'aspectCategory'})
