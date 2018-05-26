@@ -18,7 +18,7 @@ import extractUnique as xq
 import tristream_processor as stream
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, f1_score, precision_score, recall_score
 
 _start = time.time()
 
@@ -69,93 +69,16 @@ def streamers(full_dataset):
     S3_dep_corpus = []  # CORPUS (For Collecting Dependency Relations)
 
     # ---------------------------------------------------------- STREAM 1 - LEMMATIZATION
-    try:
-        for i in range(0, len(dataset)):
-            review = re.sub("[^a-zA-Z]", ' ', dataset['text'][i])
-            review = review.lower()
-            review = review.split()
+    stream1 = stream.lemmatize(dataset)
 
-            # Learn More at https://www.quora.com/What-is-difference-between-stemming-and-lemmatization
-            ps = PorterStemmer()
-            nl = WordNetLemmatizer()
+    # ----------------------------------------------------------- STREAM 2 - BIGRAMS
+    stream2 = stream.bigram(dataset)
 
-            review = [ps.stem(nl.lemmatize(word, pos='v')) for word in review if
-                      not word in set(stopwords.words('english'))]
-            review = list(set(review))
-            S1_corpus.append(review)
-            bar.load(i, base=dataset, text='Stream 1')
-        print('Stream 1: Processed')
-        # print(S1_corpus)
-
-        # ----------------------------------------------------------- STREAM 2 - BIGRAMS
-
-        for i in range(len(dataset)):
-            sent = nltk.word_tokenize(dataset.iloc[i, 0].lower())
-            PoS_Tag_sent = nltk.pos_tag(sent)
-
-            for (w1, tag1), (w2, tag2) in nltk.bigrams(PoS_Tag_sent):
-                if tag1.startswith('JJ') and tag2.startswith('NN'):  # R1
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('RB') and tag2.startswith('JJ'):  # R2
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('JJ') and tag2.startswith('JJ'):  # R3
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('NN') and tag2.startswith('JJ'):  # R4
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('RB') and tag2.startswith('VB'):  # R5
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('VB') and tag2.startswith('NN'):  # R6
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('JJ') and tag2.startswith('VB'):  # R7
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('RB') and tag2.startswith('RB'):  # R8
-                    corpora += w1 + ' ' + w2 + ';'
-                elif tag1.startswith('RB') and tag2.startswith('VB'):  # R9
-                    corpora += w1 + ' ' + w2 + ';'
-
-            S2_super_corpus.append(corpora)
-            corpora = ''
-            bar.load(i, base=dataset, text='Stream 2')
-        del PoS_Tag_sent, tag1, tag2, w1, w2, sent
-        print('Stream 2: Processed')
-    except KeyboardInterrupt:
-        print("[STAGE 1] Terminating. Human Intervention Not Allowed")
-        exit(0)
-    except AttributeError as e:
-        print("[STAGE 1] Terminating. Human Intervention Not Allowed")
-        exit(0)
     # ----------------------------------------------------------- STREAM 3 - DEPENDENCY FEATURES (spaCy)
+    stream3 = stream.dep_rel(dataset)
 
-    try:
-        for increment in range(len(dataset)):
-            sentence = dataset.iloc[increment, 0].lower()
-            # print(increment)
-            for token in nlp_en(sentence):
-                dep = check_dep_parse(token.dep_)
-                if dep is True:
-                    # print(token.dep_, end="> ")
-                    # print(token.head, token)
-                    corpora += str(token) + ' ' + str(token.head) + ';'
-                else:
-                    pass
-            S3_dep_corpus.append(corpora)
-            corpora = ''
-            bar.load(increment, base=dataset, text='Stream 3')
-        print('Stream 3: Processed')
-        plot_nlp = nlp_en(sentence)
-    except TypeError as e:
-        print("[STAGE 2] Unexpected Termination:", e)
-        exit(0)
-    except KeyboardInterrupt:
-        print("[STAGE 2] Human Interrupt Received! Exiting...")
-        exit(0)
-    del sentence, dep, increment, token
-
-    stream1 = pd.Series(S1_corpus)
-    stream2 = pd.Series(S2_super_corpus)
-    stream3 = pd.Series(S3_dep_corpus)
-
-    stream1.to_csv('Wave2/stream1.csv', index=False); stream2.to_csv('Wave2/stream2.csv', index=False)
+    stream1.to_csv('Wave2/stream1.csv', index=False)
+    stream2.to_csv('Wave2/stream2.csv', index=False)
     stream3.to_csv('Wave2/stream3.csv', index=False)
 
     del S1_corpus, S2_super_corpus, S3_dep_corpus
@@ -316,7 +239,7 @@ def split_train_test(X, y):
 def the_machine(X_train, X_test, y_train, y_test):
     print("RANDOM FOREST CLASSIFIER RESULTS:")
 
-    rfc = RandomForestClassifier(n_estimators=11)
+    rfc = RandomForestClassifier(n_estimators=25)
     rfc.fit(X_train, y_train)
     y_pred = rfc.predict(X_test)
 
@@ -324,27 +247,45 @@ def the_machine(X_train, X_test, y_train, y_test):
     print(cm)
     prf = precision_recall_fscore_support(y_test, y_pred)
     li2 = list(rfc.classes_)
+    li2.append('TOTAL')
+    print(li2)
+
     li = ['Precision', 'Recall\t', 'F1 Measure']
-    print('\t\t %s \t %.8s \t %s \t %s \t %s' % (li2[0], li2[1], li2[2], li2[3], li2[4]))
-    for i in range(len(prf)-1):
-        x = prf[i]*100.0
-        print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f' % (li[i], x[0], x[1], x[2], x[3], x[4]))
+    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
+    total_pr = precision_score(y_test, y_pred, average='micro') * 100
+    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total = [total_pr, total_re, total_f1]
+
+    print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
+    for i in range(len(prf) - 1):
+        x = prf[i] * 100.0
+        print(
+            '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
 
     print("SVM RESULTS:")
-    from sklearn.svm import SVC
-    classifier = SVC(kernel='rbf', random_state=0)
+    from sklearn.svm import SVC, LinearSVC
+    # classifier = SVC(kernel='sigmoid', degree=3)
+    classifier = LinearSVC(multi_class='crammer_singer')
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
 
     cm1 = confusion_matrix(y_test, y_pred)
     print(cm1)
     prf = precision_recall_fscore_support(y_test, y_pred)
-    li2 = list(rfc.classes_)
+    li2 = list(classifier.classes_)
+    li2.append('TOTAL')
+
     li = ['Precision', 'Recall\t', 'F1 Measure']
-    print('\t\t %s \t %.8s \t %s \t %s \t %s' % (li2[0], li2[1], li2[2], li2[3], li2[4]))
+
+    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
+    total_pr = precision_score(y_test, y_pred, average='micro') * 100
+    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total = [total_pr, total_re, total_f1]
+
+    print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
     for i in range(len(prf) - 1):
         x = prf[i] * 100.0
-        print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f' % (li[i], x[0], x[1], x[2], x[3], x[4]))
+        print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
 
 def executor():
     '''
