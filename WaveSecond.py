@@ -17,7 +17,7 @@ import progressbar as bar
 import extractUnique as xq
 import tristream_processor as stream
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier  # 248
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, f1_score, precision_score, recall_score
 
 _start = time.time()
@@ -235,20 +235,34 @@ def split_train_test(X, y):
 #     return X_test, y_test
 
 
+def evaluator(prf, li2, total):
+    li = ['Precision', 'Recall\t', 'F1 Measure']
+    print("EVALUATION RESULTS".center(60,'_'))
+    cmx = [[73.6, 81.3, 90.9, 89.9, 92.2, 87.5],
+           [66.1, 70.5, 83.3, 95.2, 89.0, 80.3],
+           [69.6, 75.5, 86.9, 92.4, 90.5, 83.5]]
+    print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
+    for i in range(len(prf) - 1):
+        x = prf[i] * 100.0
+        y = cmx[i]
+        print(
+            '%s \t %r \t\t %r \t %r \t %r \t %r \t   %r' % (li[i], x[0] >= y[0], x[1] >= y[1], x[2] >= y[2],
+                                                            x[3] >= y[3], x[4] >= y[4], total[i] >= y[5]))
+
+
 # ----------------- PREPARING THE MACHINE --------------------------
 def the_machine(X_train, X_test, y_train, y_test):
     print("RANDOM FOREST CLASSIFIER RESULTS:")
 
-    rfc = RandomForestClassifier(n_estimators=25)
-    rfc.fit(X_train, y_train)
-    y_pred = rfc.predict(X_test)
+    rf_Classifier = RandomForestClassifier(n_estimators=25, n_jobs=4)
+    rf_Classifier.fit(X_train, y_train)
+    y_pred = rf_Classifier.predict(X_test)
 
     cm = confusion_matrix(y_test, y_pred)
     print(cm)
     prf = precision_recall_fscore_support(y_test, y_pred)
-    li2 = list(rfc.classes_)
+    li2 = list(rf_Classifier.classes_)
     li2.append('TOTAL')
-    print(li2)
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
     total_f1 = f1_score(y_test, y_pred, average='micro') * 100
@@ -261,18 +275,19 @@ def the_machine(X_train, X_test, y_train, y_test):
         x = prf[i] * 100.0
         print(
             '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
+    evaluator(prf, li2, total)
 
     print("SVM RESULTS:")
-    from sklearn.svm import SVC, LinearSVC
+    from sklearn.svm import LinearSVC
     # classifier = SVC(kernel='sigmoid', degree=3)
-    classifier = LinearSVC(multi_class='crammer_singer')
-    classifier.fit(X_train, y_train)
-    y_pred = classifier.predict(X_test)
+    linsvc_classifier = LinearSVC(multi_class='crammer_singer', C=1)
+    linsvc_classifier.fit(X_train, y_train)
+    y_pred = linsvc_classifier.predict(X_test)
 
     cm1 = confusion_matrix(y_test, y_pred)
     print(cm1)
     prf = precision_recall_fscore_support(y_test, y_pred)
-    li2 = list(classifier.classes_)
+    li2 = list(linsvc_classifier.classes_)
     li2.append('TOTAL')
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
@@ -286,6 +301,68 @@ def the_machine(X_train, X_test, y_train, y_test):
     for i in range(len(prf) - 1):
         x = prf[i] * 100.0
         print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
+    evaluator(prf, li2, total)
+
+    print("MULTINOMIAL NB RESULTS:")
+    from sklearn.naive_bayes import MultinomialNB
+    # classifier = SVC(kernel='sigmoid', degree=3)
+    multi_nb_classifier = MultinomialNB()
+    multi_nb_classifier.fit(X_train, y_train)
+    y_pred = multi_nb_classifier.predict(X_test)
+
+    cm1 = confusion_matrix(y_test, y_pred)
+    print(cm1)
+    prf = precision_recall_fscore_support(y_test, y_pred)
+    li2 = list(multi_nb_classifier.classes_)
+    li2.append('TOTAL')
+
+    li = ['Precision', 'Recall\t', 'F1 Measure']
+
+    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
+    total_pr = precision_score(y_test, y_pred, average='micro') * 100
+    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total = [total_pr, total_re, total_f1]
+
+    print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
+    for i in range(len(prf) - 1):
+        x = prf[i] * 100.0
+        print(
+            '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
+    evaluator(prf, li2, total)
+
+    print("VOTING CLASSIFIER RESULTS:")
+    # BEST CLASSIFIERS
+    RFC_C1 = RandomForestClassifier(n_estimators=25, n_jobs=4)
+    LSVC_C2 = LinearSVC(multi_class='crammer_singer', C=1)
+    MNB_C3 = MultinomialNB()
+    from sklearn.ensemble import VotingClassifier
+    # classifier = GaussianNB()
+    # classifier = MultinomialNB(fit_prior=False)
+    classifier = VotingClassifier(estimators=[('lr', RFC_C1), ('rf', LSVC_C2),
+                                              ('gnb', MNB_C3)], voting='hard', n_jobs=4)
+    classifier.fit(X_train, y_train)
+    y_pred = classifier.predict(X_test)
+
+    cm1 = confusion_matrix(y_test, y_pred)
+    print(cm1)
+    prf = precision_recall_fscore_support(y_test, y_pred)
+    li2 = list(classifier.classes_)
+    li2.append('TOTAL')
+
+    li = ['Precision', 'Recall\t', 'F1 Measure']
+
+    total_f1 = f1_score(y_test, y_pred, average='macro') * 100
+    total_pr = precision_score(y_test, y_pred, average='micro') * 100
+    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total = [total_pr, total_re, total_f1]
+
+    print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
+    for i in range(len(prf) - 1):
+        x = prf[i] * 100.0
+        print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4],
+                                                                          total[i]))
+    evaluator(prf, li2, total)
+
 
 def executor():
     '''
@@ -304,7 +381,10 @@ def executor():
     '''
     all_streams = list()
     X, y = 0, 0
-    max_feat = int(input('Enter No. of features (MIN:MAX) to use in Machine\n (1000:33433) Input:'))
+    max_feat = 1000
+    def take_feat():
+        max_feat = int(input('Enter No. of features (MIN:MAX) to use in Machine\n (1000:33433) Input:'))
+        return max_feat
 
     while True:
         global fullB, testB_1
@@ -335,9 +415,10 @@ def executor():
             arr = os.listdir('.')
             exists = [item.startswith('stream*') for item in arr if item.startswith('stream')]
             if 'False' in exists:
-                print('\t\t\t\t\t\t[CHOICE 2 ISSUE] MISSING STREAMS')
+                print('\t\t\t\t\t\t[CHOICE 2] GENERATING STREAMS')
+                streamers(fullB)
             else:
-                print('\t\t\t\t\t\tALREADY PROCESSED')
+                print('\t\t\t\t\t\tALREADY PROCESSED: GO TO STEP 3')
             a = pd.read_csv('stream1.csv', header=None)
             b = pd.read_csv('stream2.csv', header=None)
             c = pd.read_csv('stream3.csv', header=None)
@@ -350,8 +431,9 @@ def executor():
             if 'ngram_list.csv' not in arr:
                 corrector(combined_features_list=combined_features)
             else:
-                print('\n\t\t\t\t\t\tAVAILABLE CORRECTED NGRAMS')
+                print('\n\t\t\t\t\t\tAVAILABLE CORRECTED NGRAMS: OFFLINE AVAILABLE')
         elif choice == 3:
+            max_feat = take_feat()
             df2 = pd.read_csv('ngram_list.csv', header=None)
             X, y = creating_bow(corrected_list=list(df2[0]), features_dataframe=features_dataframe,
                                             max_features=max_feat)
