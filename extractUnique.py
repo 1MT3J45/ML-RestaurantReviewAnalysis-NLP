@@ -131,6 +131,36 @@ def get_correct_spell(word_list, split_by=' '):
     return spell_sent
 
 
+def get_correct_spell_lemmas(word_list, split_by=' '):
+    from autocorrect import spell
+    li = word_list
+    spell_right = list()
+    spell_sent = list()
+    for i in range(len(li)):
+        w_li = ast.literal_eval(word_list[i])
+        sent = ''
+        spell_right = list()
+        # print(w_li)
+        for word in w_li:
+            if word.startswith("n't"):
+                word = 'not' + word[3:]
+                cw = spell(word)
+            elif word.startswith("I've") or word.startswith("i've"):
+                word = 'i have' + word[4:]
+                cw = spell(word)
+            elif word.startswith("It's") or word.startswith("it's"):
+                word = 'it is' + word[4:]
+                cw = spell(word)
+            else:
+                cw = spell(word)
+            spell_right.append(cw.lower())
+        # print(spell_right)
+        sent = ' '.join(spell_right)
+        spell_sent.append(sent)
+        pb.load(i, li, 'Correcting Words')
+    return spell_sent
+
+
 def bow_creater(array):
     # Creating Bag of Words Model
     from sklearn.feature_extraction.text import CountVectorizer

@@ -19,7 +19,7 @@ import tristream_processor as stream
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier  # 248
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, f1_score, precision_score, recall_score
 
-#_start = time.time()
+_start = time.time()
 
 testB = pd.read_csv("CSV/Restaurants_Test_Data_phaseB.csv")
 trainB = pd.read_csv("CSV/Restaurants_Train_v2.csv")
@@ -76,9 +76,9 @@ def streamers(full_dataset):
     # ----------------------------------------------------------- STREAM 3 - DEPENDENCY FEATURES (spaCy)
     stream3 = stream.dep_rel(dataset)
 
-    stream1.to_csv('Wave2/stream1.csv', index=False)
-    stream2.to_csv('Wave2/stream2.csv', index=False)
-    stream3.to_csv('Wave2/stream3.csv', index=False)
+    stream1.to_csv('TestLemmas/stream1.csv', index=False)
+    stream2.to_csv('TestLemmas/stream2.csv', index=False)
+    stream3.to_csv('TestLemmas/stream3.csv', index=False)
 
     del S1_corpus, S2_super_corpus, S3_dep_corpus
 
@@ -87,13 +87,13 @@ def streamers(full_dataset):
 
 def sheet_generator(s1, s2, s3):
     stream1 = s1
-    stream2 = s2
-    stream3 = s3
+    # stream2 = s2
+    # stream3 = s3
 
-    df = pd.concat([stream1, stream2, stream3], axis=1)
-    df = df.rename(columns={0: 'lemmas', 1: 'bigrams', 2: 'depenrel'})
-    df.to_csv('Wave2/FeatureSet.csv', index=False)
-    df = pd.read_csv('Wave2/FeatureSet.csv', sep=',')
+    df = pd.concat([stream1], axis=1) # stream2, stream3], axis=1)
+    df = df.rename(columns={0: 'lemmas'}) # , 1: 'bigrams', 2: 'depenrel'})
+    df.to_csv('TestLemmas/FeatureSet.csv', index=False)
+    df = pd.read_csv('TestLemmas/FeatureSet.csv', sep=',')
 
     del df
     # try:
@@ -106,33 +106,35 @@ def sheet_generator(s1, s2, s3):
     #     print("Browser must start with Graph. If doesn't please make sure to use Ubuntu with Firefox")
 
     # Get Unique Features from Bi-grams, Dependency Rel
-    whole_df = pd.concat([dataset.iloc[0:, 0], stream1, stream2, stream3, dataset.iloc[0:, 2]], axis=1)
-    whole_df = whole_df.rename(columns={'text': 'reviews', 0: 'lemmas', 1: 'bigrams', 2: 'depenrel',
+    whole_df = pd.concat([dataset.iloc[0:, 0], stream1, dataset.iloc[0:, 2]], axis=1) # stream2, stream3, dataset.iloc[0:, 2]], axis=1)
+    whole_df = whole_df.rename(columns={'text': 'reviews', 0: 'lemmas',
                                         'aspectCategories/aspectCategory/0/_category': 'aspectCategory'})
-    whole_df.to_csv('Wave2/WholeSet.csv', index=False)
-    whole_df = pd.read_csv('Wave2/WholeSet.csv', sep=',')
-    u_feat = list()
-    try:
-        u_feat = xq.unique(whole_df=whole_df, bigram_col=2, dep_rel_col=3)
-        print("Unique Features Extracted")
-    except KeyboardInterrupt:
-        print("[STAGE 3] Manual Interrupt to Unique Features")
-        exit(0)
-    except Exception as e:
-        print('[STAGE 3] Improper Termination due to:', e)
-        exit(0)
-    # DF with Review, Lemmas, U_feat, Aspect Cat
+                                        # 1: 'bigrams', 2: 'depenrel',
+                                        # 'aspectCategories/aspectCategory/0/_category': 'aspectCategory'})
+    whole_df.to_csv('TestLemmas/WholeSet.csv', index=False)
+    whole_df = pd.read_csv('TestLemmas/WholeSet.csv', sep=',')
+    # u_feat = list()
+    # try:
+    #     u_feat = xq.unique(whole_df=whole_df, bigram_col=2, dep_rel_col=3)
+    #     print("Unique Features Extracted")
+    # except KeyboardInterrupt:
+    #     print("[STAGE 3] Manual Interrupt to Unique Features")
+    #     exit(0)
+    # except Exception as e:
+    #     print('[STAGE 3] Improper Termination due to:', e)
+    #     exit(0)
+    # # DF with Review, Lemmas, U_feat, Aspect Cat
     Feature_df = whole_df[['reviews', 'lemmas']][0:]
-    Feature_df = pd.concat([Feature_df, pd.Series(u_feat), whole_df.iloc[0:, -1]], axis=1)
-    Feature_df = Feature_df.rename(columns={0: 'ufeat'})
-    Feature_df.to_csv('Wave2/Feature.csv', index=False)
+    Feature_df = pd.concat([Feature_df, whole_df.iloc[0:, -1]], axis=1)
+    # Feature_df = Feature_df.rename(columns={0: 'ufeat'})
+    Feature_df.to_csv('TestLemmas/Feature.csv', index=False)
     del whole_df,
 
     # Aspect Cat, Lemmas + U_feat (from All sentences)
     c_list = list()
     try:
         Feature_df = Feature_df.dropna()
-        c_list = xq.combiner(Feature_df=Feature_df, lemma_col=1, uniqueFeat_col=2, use_ast=True)
+        c_list = Feature_df['lemmas']# xq.combiner(Feature_df=Feature_df, lemma_col=1, uniqueFeat_col=2, use_ast=True)
     except KeyboardInterrupt:
         print("[STAGE 4] Manual Interrupt to Combiner")
         exit(0)
@@ -148,9 +150,9 @@ def corrector(combined_features_list):
 
     try:
         st = time.time()
-        ngram_list = xq.get_correct_spell(word_list=c_list, split_by=';')
-        syn_list = stream.syns_of_ngrams(ngram_list)
-        ngram_list+=syn_list
+        ngram_list = xq.get_correct_spell_lemmas(word_list=c_list, split_by=';')
+        #syn_list = stream.syns_of_ngrams(ngram_list)
+        #ngram_list += syn_list
         et = time.time()
         print('Time elapsed %.3f' % float(((et-st)/60)/60))
     except ValueError:
@@ -162,7 +164,7 @@ def corrector(combined_features_list):
     except KeyboardInterrupt:
         print("[STAGE 5] Spell Checker | Forced Drop")
 
-    pd.Series(ngram_list).to_csv('Wave2/ngram_list.csv', index=False)
+    pd.Series(ngram_list).to_csv('TestLemmas/ngram_list.csv', index=False)
     return ngram_list
 
 
@@ -199,7 +201,8 @@ def evaluator(prf, li2, total):
     for i in range(len(prf) - 1):
         x = prf[i] * 100.0
         y = cmx[i]
-        print('%s \t %r \t\t %r \t %r \t %r \t %r \t   %r' % (li[i], x[0] >= y[0], x[1] >= y[1], x[2] >= y[2],
+        print(
+            '%s \t %r \t\t %r \t %r \t %r \t %r \t   %r' % (li[i], x[0] >= y[0], x[1] >= y[1], x[2] >= y[2],
                                                             x[3] >= y[3], x[4] >= y[4], total[i] >= y[5]))
 
 
@@ -354,7 +357,7 @@ def executor():
 6. Exit
 \t Choice:"""))
         if choice == 1:
-            arr = os.listdir('Wave2')
+            arr = os.listdir('.')
             exists = [item.startswith('stream') for item in arr if item.startswith('stream')]
             if 'False' in exists:
                 a, b, c = streamers(fullB)
@@ -362,32 +365,33 @@ def executor():
                 all_streams.append(b)
                 all_streams.append(c)
             else:
-                print('\t\t\t\t\t\tALREADY PROCESSED: GO TO STEP 2')
+                print('\t\t\t\t\t\t[STREAMS] ALREADY PROCESSED: GO TO STEP 2')
 
         elif choice == 2:
-            arr = os.listdir('.')
-            exists = [item.startswith('stream*') for item in arr if item.startswith('stream')]
+            arr = os.listdir('TestLemmas')
+            exists = [item.startswith('stream') for item in arr if item.startswith('stream')]
             if 'False' in exists:
                 print('\t\t\t\t\t\t[CHOICE 2] GENERATING STREAMS')
                 streamers(fullB)
             else:
                 print('\t\t\t\t\t\tALREADY PROCESSED: GO TO STEP 3')
-            a = pd.read_csv('Wave2/stream1.csv', header=None)
-            b = pd.read_csv('Wave2/stream2.csv', header=None)
-            c = pd.read_csv('Wave2/stream3.csv', header=None)
+            a = pd.read_csv('TestLemmas/stream1.csv', header=None)
+            b = pd.read_csv('TestLemmas/stream2.csv', header=None)
+            c = pd.read_csv('TestLemmas/stream3.csv', header=None)
             all_streams.append(pd.Series(a[0]))
             all_streams.append(pd.Series(b[0]))
             all_streams.append(pd.Series(c[0]))
 
             features_dataframe, combined_features = sheet_generator(all_streams[0], all_streams[1], all_streams[2])
-            arr = os.listdir('Wave2')
+            arr = os.listdir('TestLemmas')
             if 'ngram_list.csv' not in arr:
-                corrector(combined_features_list=combined_features)
+                corrector(combined_features_list=list(combined_features))
             else:
-                print('\n\t\t\t\t\t\tAVAILABLE CORRECTED NGRAMS: OFFLINE AVAILABLE')
+                print('\n\t\t\t\t\t\t AVAILABLE CORRECTED NGRAMS: OFFLINE AVAILABLE')
         elif choice == 3:
             max_feat = take_feat()
-            df2 = pd.read_csv('Wave2/ngram_list.csv', header=None)
+            df2 = pd.read_csv('TestLemmas/ngram_list.csv', header=None)
+            df2 = df2.fillna('none')
             X, y = creating_bow(corrected_list=list(df2[0]), features_dataframe=features_dataframe,
                                             max_features=max_feat)
             print("\t\t\t\t\t\tDATASET IS NOW READY")

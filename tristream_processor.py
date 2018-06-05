@@ -1,6 +1,7 @@
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import wordnet
 
 import pandas as pd
 import nltk
@@ -9,8 +10,6 @@ import re
 import spacy
 
 import progressbar as bar
-import extractUnique as xq
-import pickle
 
 # --------------------- STREAM INITIALIZER ----------------------------
 PoS_Tag_sent = list()
@@ -144,10 +143,34 @@ def dep_rel(dataset):
         exit(0)
 
 
-stream1 = pd.Series(S1_corpus)
-stream2 = pd.Series(S2_super_corpus)
-stream3 = pd.Series(S3_dep_corpus)
-df = pd.concat([stream1, stream2, stream3], axis=1)
-df = df.rename(columns={0: 'lemmas', 1: 'bigrams', 2: 'depenrel'})
-df.to_csv('FeatureSet.csv', index=False)
-df = pd.read_csv('FeatureSet.csv', sep=',')
+def syns_of_ngrams(ngram_list):
+    syns_book = list()
+    syns = list()
+    low_synonyms = list()
+
+    for i in range(len(ngram_list)):
+        one_review = ngram_list[i]
+        for word in one_review:
+            syns = list()
+            low_synonyms = list()
+            for synonyms in wordnet.synsets(word):
+                # print(synonyms.lemma_names())
+                syns += synonyms.lemma_names()
+            syns = list(set(syns))
+            # print(syns)
+            for j in range(len(syns)):
+                # print(syns[j].lower())
+                low_synonyms.append(syns[j].lower())
+                bar.load(j, base=syns, text='Generating Synonyms')
+            ' '.join(low_synonyms)
+        syns_book.append(low_synonyms)
+
+    return syns_book
+
+# stream1 = pd.Series(S1_corpus)
+# stream2 = pd.Series(S2_super_corpus)
+# stream3 = pd.Series(S3_dep_corpus)
+# df = pd.concat([stream1, stream2, stream3], axis=1)
+# df = df.rename(columns={0: 'lemmas', 1: 'bigrams', 2: 'depenrel'})
+# df.to_csv('FeatureSet.csv', index=False)
+# df = pd.read_csv('FeatureSet.csv', sep=',')
