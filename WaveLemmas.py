@@ -210,7 +210,7 @@ def evaluator(prf, li2, total):
 def the_machine(X_train, X_test, y_train, y_test):
     print("RANDOM FOREST CLASSIFIER RESULTS:")
 
-    rf_Classifier = RandomForestClassifier(n_estimators=25, n_jobs=4)
+    rf_Classifier = RandomForestClassifier(n_estimators=50, n_jobs=4)
     rf_Classifier.fit(X_train, y_train)
     y_pred = rf_Classifier.predict(X_test)
 
@@ -221,9 +221,10 @@ def the_machine(X_train, X_test, y_train, y_test):
     li2.append('TOTAL')
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
-    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
-    total_pr = precision_score(y_test, y_pred, average='micro') * 100
-    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    method = 'weighted'
+    total_f1 = f1_score(y_test, y_pred, average=method) * 100
+    total_pr = precision_score(y_test, y_pred, average=method) * 100
+    total_re = recall_score(y_test, y_pred, average=method) * 100
     total = [total_pr, total_re, total_f1]
 
     print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
@@ -248,9 +249,9 @@ def the_machine(X_train, X_test, y_train, y_test):
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
 
-    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
-    total_pr = precision_score(y_test, y_pred, average='micro') * 100
-    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total_f1 = f1_score(y_test, y_pred, average=method) * 100
+    total_pr = precision_score(y_test, y_pred, average=method) * 100
+    total_re = recall_score(y_test, y_pred, average=method) * 100
     total = [total_pr, total_re, total_f1]
 
     print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
@@ -274,9 +275,9 @@ def the_machine(X_train, X_test, y_train, y_test):
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
 
-    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
-    total_pr = precision_score(y_test, y_pred, average='micro') * 100
-    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total_f1 = f1_score(y_test, y_pred, average=method) * 100
+    total_pr = precision_score(y_test, y_pred, average=method) * 100
+    total_re = recall_score(y_test, y_pred, average=method) * 100
     total = [total_pr, total_re, total_f1]
 
     print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
@@ -370,7 +371,7 @@ def executor():
         elif choice == 2:
             arr = os.listdir('TestLemmas')
             exists = [item.startswith('stream') for item in arr if item.startswith('stream')]
-            if 'False' in exists:
+            if 'True' not in exists:
                 print('\t\t\t\t\t\t[CHOICE 2] GENERATING STREAMS')
                 streamers(fullB)
             else:

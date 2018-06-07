@@ -149,8 +149,8 @@ def corrector(combined_features_list):
     try:
         st = time.time()
         ngram_list = xq.get_correct_spell(word_list=c_list, split_by=';')
-        syn_list = stream.syns_of_ngrams(ngram_list)
-        ngram_list+=syn_list
+        #syn_list = stream.syns_of_ngrams(ngram_list)
+        #ngram_list+=syn_list
         et = time.time()
         print('Time elapsed %.3f' % float(((et-st)/60)/60))
     except ValueError:
@@ -365,8 +365,8 @@ def executor():
                 print('\t\t\t\t\t\tALREADY PROCESSED: GO TO STEP 2')
 
         elif choice == 2:
-            arr = os.listdir('.')
-            exists = [item.startswith('stream*') for item in arr if item.startswith('stream')]
+            arr = os.listdir('Wave2')
+            exists = [item.startswith('stream') for item in arr if item.startswith('stream')]
             if 'False' in exists:
                 print('\t\t\t\t\t\t[CHOICE 2] GENERATING STREAMS')
                 streamers(fullB)

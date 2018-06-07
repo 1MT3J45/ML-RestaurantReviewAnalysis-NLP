@@ -42,7 +42,7 @@ def combiner(Feature_df, lemma_col, uniqueFeat_col, use_ast):
     sentence = ''
     for i in range(len(dataframe)):
         if use_ast is True:
-            sentence = ast.literal_eval(dataframe.iloc[i, lemma_col]) + dataframe.iloc[i, uniqueFeat_col]
+            sentence = ast.literal_eval(dataframe.iloc[i, lemma_col]) + list(dataframe.iloc[i, uniqueFeat_col])
         elif use_ast is False:
             sentence = dataframe.iloc[i, lemma_col] + dataframe.iloc[i, uniqueFeat_col]
         # fetching list from string
