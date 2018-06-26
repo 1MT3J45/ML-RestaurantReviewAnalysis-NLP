@@ -26,16 +26,17 @@ S3_dep_corpus = []  # CORPUS (For Collecting Dependency Relations)
 # ==================== RULES DEPENDENCY RELATIONS =================
 def check_dep_parse(token_dep):
     dep_str = token_dep
-    check_list = list()
-    if dep_str.startswith('nsub'):
-        pass
-    elif dep_str.startswith('amod'):
-        pass
-    elif dep_str.startswith('rcmod'):
-        pass
-    elif dep_str.startswith('dobj'):
-        pass
-    elif dep_str.startswith('neg'):
+    # if dep_str.startswith('nsub'):
+    #     pass
+    # elif dep_str.startswith('amod'):
+    #     pass
+    # elif dep_str.startswith('rcmod'):
+    #     pass
+    # elif dep_str.startswith('dobj'):
+    #     pass
+    # elif dep_str.startswith('neg'):
+    #     pass
+    if dep_str.startswith('det'):
         pass
     else:
         return False

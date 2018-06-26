@@ -202,12 +202,17 @@ def evaluator(prf, li2, total):
         print('%s \t %r \t\t %r \t %r \t %r \t %r \t   %r' % (li[i], x[0] >= y[0], x[1] >= y[1], x[2] >= y[2],
                                                             x[3] >= y[3], x[4] >= y[4], total[i] >= y[5]))
 
+def prf_to_csv(prf, fileName):
+    PRF = np.array(prf)
+    PRF_DF = pd.DataFrame(PRF, index=['Precision', 'Recall', 'F1 Measure', 'Support'])
+    PRF_DF = PRF_DF.iloc[:,:] * 100
+    PRF_DF.to_csv('Results/%s'%fileName)
 
 # ----------------- PREPARING THE MACHINE --------------------------
 def the_machine(X_train, X_test, y_train, y_test):
     print("RANDOM FOREST CLASSIFIER RESULTS:")
 
-    rf_Classifier = RandomForestClassifier(n_estimators=25, n_jobs=4)
+    rf_Classifier = RandomForestClassifier(n_estimators=50, n_jobs=4)
     rf_Classifier.fit(X_train, y_train)
     y_pred = rf_Classifier.predict(X_test)
 
@@ -218,9 +223,10 @@ def the_machine(X_train, X_test, y_train, y_test):
     li2.append('TOTAL')
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
-    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
-    total_pr = precision_score(y_test, y_pred, average='micro') * 100
-    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    method = 'weighted'
+    total_f1 = f1_score(y_test, y_pred, average=method) * 100
+    total_pr = precision_score(y_test, y_pred, average=method) * 100
+    total_re = recall_score(y_test, y_pred, average=method) * 100
     total = [total_pr, total_re, total_f1]
 
     print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
@@ -229,6 +235,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print(
             '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'RandomForest_LBD.csv')
 
     print("SVM RESULTS:")
     from sklearn.svm import LinearSVC
@@ -245,9 +252,9 @@ def the_machine(X_train, X_test, y_train, y_test):
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
 
-    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
-    total_pr = precision_score(y_test, y_pred, average='micro') * 100
-    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total_f1 = f1_score(y_test, y_pred, average=method) * 100
+    total_pr = precision_score(y_test, y_pred, average=method) * 100
+    total_re = recall_score(y_test, y_pred, average=method) * 100
     total = [total_pr, total_re, total_f1]
 
     print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
@@ -255,6 +262,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         x = prf[i] * 100.0
         print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'LinearSVC_LBD.csv')
 
     print("MULTINOMIAL NB RESULTS:")
     from sklearn.naive_bayes import MultinomialNB
@@ -271,9 +279,9 @@ def the_machine(X_train, X_test, y_train, y_test):
 
     li = ['Precision', 'Recall\t', 'F1 Measure']
 
-    total_f1 = f1_score(y_test, y_pred, average='micro') * 100
-    total_pr = precision_score(y_test, y_pred, average='micro') * 100
-    total_re = recall_score(y_test, y_pred, average='micro') * 100
+    total_f1 = f1_score(y_test, y_pred, average=method) * 100
+    total_pr = precision_score(y_test, y_pred, average=method) * 100
+    total_re = recall_score(y_test, y_pred, average=method) * 100
     total = [total_pr, total_re, total_f1]
 
     print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
@@ -282,6 +290,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print(
             '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'MultinomialNB_LBD.csv')
 
     print("VOTING CLASSIFIER RESULTS:")
     # BEST CLASSIFIERS
@@ -315,6 +324,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4],
                                                                           total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'VotingClassifier_LBD.csv')
 
 
 def executor():
@@ -418,3 +428,19 @@ def executor():
 
 executor()
 
+# TODO GRAPHS
+# 1. X: AspectCategories Y: Percentages
+# I.    Lemmas (Paper vs. Results)
+# II.   Lemmas + Dependency
+# III.  Lemmas + Bigrams + Dependency
+
+# from collections import Counter
+# dictionary = Counter(dataset['aspectCategories/aspectCategory/0/_category'])
+# dictionary_ = dict(dictionary)
+
+# f1 = open('category_stack.csv', 'w')
+# for k, v in dictionary_.items():
+#     print(k, v)
+#     f1.write(k + ',' + str(v) + '\n')
+
+# f1.close()

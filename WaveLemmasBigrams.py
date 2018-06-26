@@ -203,6 +203,12 @@ def evaluator(prf, li2, total):
                                                             x[3] >= y[3], x[4] >= y[4], total[i] >= y[5]))
 
 
+def prf_to_csv(prf, fileName):
+    PRF = np.array(prf)
+    PRF_DF = pd.DataFrame(PRF, index=['Precision', 'Recall', 'F1 Measure', 'Support'])
+    PRF_DF = PRF_DF.iloc[:,:] * 100
+    PRF_DF.to_csv('Results/%s'%fileName)
+
 # ----------------- PREPARING THE MACHINE --------------------------
 def the_machine(X_train, X_test, y_train, y_test):
     print("RANDOM FOREST CLASSIFIER RESULTS:")
@@ -230,6 +236,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print(
             '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'RandomForest_LB.csv')
 
     print("SVM RESULTS:")
     from sklearn.svm import LinearSVC
@@ -254,9 +261,9 @@ def the_machine(X_train, X_test, y_train, y_test):
     print('\t\t  %s    %.8s \t %s \t %s \t %s   %s' % (li2[0], li2[1], li2[2], li2[3], li2[4], li2[5]))
     for i in range(len(prf) - 1):
         x = prf[i] * 100.0
-        print(
-            '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
+        print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'LinearSVC_LB.csv')
 
     print("MULTINOMIAL NB RESULTS:")
     from sklearn.naive_bayes import MultinomialNB
@@ -284,6 +291,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print(
             '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'MultinomialNB_LB.csv')
 
     print("VOTING CLASSIFIER RESULTS:")
     # BEST CLASSIFIERS
@@ -317,6 +325,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4],
                                                                           total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'VotingClassifier_LB.csv')
 
 
 def executor():

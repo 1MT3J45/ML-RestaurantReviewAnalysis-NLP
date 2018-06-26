@@ -35,23 +35,23 @@ dataset = fullB  # MAJOR DATA-SET
 # --------------------- FUNCTIONS --------------------------
 
 
-def check_dep_parse(token_dep):
-    dep_str = token_dep
-    # if dep_str.startswith('nsub'):
-    #     pass
-    # elif dep_str.startswith('amod'):
-    #     pass
-    # elif dep_str.startswith('rcmod'):
-    #     pass
-    # elif dep_str.startswith('dobj'):
-    #     pass
-    # elif dep_str.startswith('neg'):
-    #     pass
-    if dep_str.startswith('det'):
-        pass
-    else:
-        return False
-    return True
+# def check_dep_parse(token_dep):
+#     dep_str = token_dep
+#     # if dep_str.startswith('nsub'):
+#     #     pass
+#     # elif dep_str.startswith('amod'):
+#     #     pass
+#     # elif dep_str.startswith('rcmod'):
+#     #     pass
+#     # elif dep_str.startswith('dobj'):
+#     #     pass
+#     # elif dep_str.startswith('neg'):
+#     #     pass
+#     if dep_str.startswith('det'):
+#         pass
+#     else:
+#         return False
+#     return True
 
 
 def streamers(full_dataset):
@@ -205,6 +205,11 @@ def evaluator(prf, li2, total):
             '%s \t %r \t\t %r \t %r \t %r \t %r \t   %r' % (li[i], x[0] >= y[0], x[1] >= y[1], x[2] >= y[2],
                                                             x[3] >= y[3], x[4] >= y[4], total[i] >= y[5]))
 
+def prf_to_csv(prf, fileName):
+    PRF = np.array(prf)
+    PRF_DF = pd.DataFrame(PRF, index=['Precision', 'Recall', 'F1 Measure', 'Support'])
+    PRF_DF = PRF_DF.iloc[:,:] * 100
+    PRF_DF.to_csv('Results/%s'%fileName)
 
 # ----------------- PREPARING THE MACHINE --------------------------
 def the_machine(X_train, X_test, y_train, y_test):
@@ -233,6 +238,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print(
             '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'RandomForest_L.csv')
 
     print("SVM RESULTS:")
     from sklearn.svm import LinearSVC
@@ -259,6 +265,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         x = prf[i] * 100.0
         print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'LinearSVC_L.csv')
 
     print("MULTINOMIAL NB RESULTS:")
     from sklearn.naive_bayes import MultinomialNB
@@ -286,6 +293,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print(
             '%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4], total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'MultinomialNB_L.csv')
 
     print("VOTING CLASSIFIER RESULTS:")
     # BEST CLASSIFIERS
@@ -319,6 +327,7 @@ def the_machine(X_train, X_test, y_train, y_test):
         print('%s \t %.2f \t\t %.2f \t %.2f \t %.2f \t %.2f \t   %.1f' % (li[i], x[0], x[1], x[2], x[3], x[4],
                                                                           total[i]))
     evaluator(prf, li2, total)
+    prf_to_csv(prf, 'VotingClassifier_L.csv')
 
 
 def executor():
