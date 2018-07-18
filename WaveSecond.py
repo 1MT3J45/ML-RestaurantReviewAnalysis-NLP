@@ -180,7 +180,7 @@ def creating_bow(corrected_list, features_dataframe, max_features=33433):
     X = cv.fit_transform(ngram_list).toarray()
     y = Feature_df['aspectCategory']
     del ngram_list
-    return X, y
+    return X, y, cv.vocabulary_
 
 
 def split_train_test(X, y):
@@ -398,9 +398,18 @@ def executor():
         elif choice == 3:
             max_feat = take_feat()
             df2 = pd.read_csv('Wave2/ngram_list.csv', header=None)
-            X, y = creating_bow(corrected_list=list(df2[0]), features_dataframe=features_dataframe,
+            X, y, vocab = creating_bow(corrected_list=list(df2[0]), features_dataframe=features_dataframe,
                                             max_features=max_feat)
             print("\t\t\t\t\t\tDATASET IS NOW READY")
+            # X_df = pd.DataFrame(X)
+            # y_df = pd.DataFrame(y)
+            # import operator
+            # dataset_cv = pd.concat([X_df, y_df], axis=1)
+            # dataset_cv.to_csv('processed_dataset.csv', index=False)
+            # pcd_df = pd.read_csv('processed_dataset.csv')
+            # sorted_val_df.iloc[:, 0]
+            # list(sorted_val_df.iloc[:, 0])
+            # pcd_df.columns = list(sorted_val_df.iloc[:, 0]) + ['aspectCategory']
         elif choice == 4:
             # arr = os.listdir('./Wave2/')
             # if 'X_train.csv' and 'X_test.csv' and 'y_train.csv' and 'y_test.csv' in arr:
